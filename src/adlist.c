@@ -106,7 +106,8 @@ list *listAddNodeHead(list *list, void *value)
 list *listAddNodeTail(list *list, void *value)
 {
     listNode *node;
-
+//Doubly_linked_list 双链表
+    //每个node,有一个value,有一个prev，指向前个node,一个next，指向后面的Node，tail是为了记录上个node
     if ((node = zmalloc(sizeof(*node))) == NULL)
         return NULL;
     node->value = value;

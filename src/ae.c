@@ -402,7 +402,7 @@ int aeProcessEvents(aeEventLoop *eventLoop, int flags)
                 tvp = NULL; /* wait forever */
             }
         }
-//调用内核监听到的事件，并赋值到eventloop
+//轮询触发事件，并赋值到eventLoop->fired
         numevents = aeApiPoll(eventLoop, tvp);
         for (j = 0; j < numevents; j++) {
             aeFileEvent *fe = &eventLoop->events[eventLoop->fired[j].fd];//获取这在发生的事件
@@ -458,6 +458,7 @@ void aeMain(aeEventLoop *eventLoop) {
     while (!eventLoop->stop) {
         if (eventLoop->beforesleep != NULL)
             eventLoop->beforesleep(eventLoop);
+        //轮询触发事件并处理
         aeProcessEvents(eventLoop, AE_ALL_EVENTS);
     }
 }
