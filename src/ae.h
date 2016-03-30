@@ -89,13 +89,13 @@ typedef struct aeFiredEvent {
 typedef struct aeEventLoop {
     int maxfd;   /* highest file descriptor currently registered */
     int setsize; /* max number of file descriptors tracked */
-    long long timeEventNextId;
+    long long timeEventNextId;//下一个时间时间标识符id
     time_t lastTime;     /* Used to detect system clock skew */
     aeFileEvent *events; /* Registered events */
     aeFiredEvent *fired; /* Fired events */
     aeTimeEvent *timeEventHead;
     int stop;
-    //kquene信息
+    //事件队列状态
     void *apidata; /* This is used for polling API specific data */
     aeBeforeSleepProc *beforesleep;
 } aeEventLoop;

@@ -134,7 +134,7 @@ void aeDeleteEventLoop(aeEventLoop *eventLoop) {
 void aeStop(aeEventLoop *eventLoop) {
     eventLoop->stop = 1;
 }
-//赋予新事件
+//赋予新事件 fd为field description
 int aeCreateFileEvent(aeEventLoop *eventLoop, int fd, int mask,
         aeFileProc *proc, void *clientData)
 {
@@ -144,12 +144,12 @@ int aeCreateFileEvent(aeEventLoop *eventLoop, int fd, int mask,
     }
     //c操作符优先级 -> [] & http://en.cppreference.com/w/c/language/operator_precedence
     //先执行eventLoop->events,事件数组的地址，在指向[],具体事件，在执行&,该事件的地址
-    aeFileEvent *fe = &eventLoop->events[fd];
-
+    aeFileEvent *fe = &eventLoop->events[fd];//用文件标识符当做events索引
+//创建fd对应的事件
     if (aeApiAddEvent(eventLoop, fd, mask) == -1)
         return AE_ERR;
     fe->mask |= mask;
-    if (mask & AE_READABLE) fe->rfileProc = proc;
+    if (mask & AE_READABLE) fe->rfileProc = proc;//赋值该事件的handler
     if (mask & AE_WRITABLE) fe->wfileProc = proc;
     fe->clientData = clientData;
     if (fd > eventLoop->maxfd)
@@ -186,7 +186,7 @@ static void aeGetTime(long *seconds, long *milliseconds)
 {
     struct timeval tv;
 
-    gettimeofday(&tv, NULL);
+    gettimeofday(&tv, NULL);//获取当前时间
     *seconds = tv.tv_sec;
     *milliseconds = tv.tv_usec/1000;
 }
@@ -197,7 +197,7 @@ static void aeAddMillisecondsToNow(long long milliseconds, long *sec, long *ms) 
     aeGetTime(&cur_sec, &cur_ms);
     when_sec = cur_sec + milliseconds/1000;
     when_ms = cur_ms + milliseconds%1000;
-    if (when_ms >= 1000) {
+    if (when_ms >= 1000) {//慢1000的毫秒转到秒
         when_sec ++;
         when_ms -= 1000;
     }
@@ -374,7 +374,7 @@ int aeProcessEvents(aeEventLoop *eventLoop, int flags)
         if (flags & AE_TIME_EVENTS && !(flags & AE_DONT_WAIT))
             shortest = aeSearchNearestTimer(eventLoop);
         if (shortest) {
-            long now_sec, now_ms;
+            long now_sec, now_ms;//当前时间秒，毫秒
 
             /* Calculate the time missing for the nearest
              * timer to fire. */

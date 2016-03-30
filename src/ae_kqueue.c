@@ -35,7 +35,7 @@
 
 typedef struct aeApiState {
     //field descriptor 解释http://stackoverflow.com/questions/5256599/what-are-file-descriptors-explained-in-simple-terms
-    int kqfd;//kqueue field descriptor
+    int kqfd;//事件队列的 field descriptor
     struct kevent *events;//kevent数量
 } aeApiState;
 
@@ -78,6 +78,8 @@ static int aeApiAddEvent(aeEventLoop *eventLoop, int fd, int mask) {
     struct kevent ke;
 
     if (mask & AE_READABLE) {
+        //实例化kevent事件
+        //如果fd为scoket文件操作符，如果有一个连接，则返回该fd对应的socket
         EV_SET(&ke, fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
         if (kevent(state->kqfd, &ke, 1, NULL, 0, NULL) == -1) return -1;
     }
