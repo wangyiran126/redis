@@ -73,8 +73,9 @@ int anetSetBlock(char *err, int fd, int non_block) {
         flags |= O_NONBLOCK;
     else
         flags &= ~O_NONBLOCK;
-
-    if (fcntl(fd, F_SETFL, flags) == -1) {
+   //nonblock意思 O_NONBLOCK   Non-blocking I/O; if no data is available to a read call, or if a write operation
+     //   would block, the read or write call returns -1 with the error EAGAIN.
+    if (fcntl(fd, F_SETFL, flags) == -1) {//设置socket状态为nonblock
         anetSetError(err, "fcntl(F_SETFL,O_NONBLOCK): %s", strerror(errno));
         return ANET_ERR;
     }
@@ -452,7 +453,7 @@ static int anetListen(char *err, int s, struct sockaddr *sa, socklen_t len, int 
 
 static int anetV6Only(char *err, int s) {
     int yes = 1;
-    if (setsockopt(s,IPPROTO_IPV6,IPV6_V6ONLY,&yes,sizeof(yes)) == -1) {
+    if (setsockopt(s,IPPROTO_IPV6,IPV6_V6ONLY,&yes,sizeof(yes)) == -1) {//设置socket选项
         anetSetError(err, "setsockopt: %s", strerror(errno));
         close(s);
         return ANET_ERR;
@@ -477,12 +478,12 @@ static int _anetTcpServer(char *err, int port, char *bindaddr, int af, int backl
         return ANET_ERR;
     }
     for (p = servinfo; p != NULL; p = p->ai_next) {
-        if ((s = socket(p->ai_family,p->ai_socktype,p->ai_protocol)) == -1)
+        if ((s = socket(p->ai_family,p->ai_socktype,p->ai_protocol)) == -1)//创建socket create an endpoint for communication
             continue;
 
         if (af == AF_INET6 && anetV6Only(err,s) == ANET_ERR) goto error;
         if (anetSetReuseAddr(err,s) == ANET_ERR) goto error;
-        if (anetListen(err,s,p->ai_addr,p->ai_addrlen,backlog) == ANET_ERR) goto error;
+        if (anetListen(err,s,p->ai_addr,p->ai_addrlen,backlog) == ANET_ERR) goto error;//绑定监听
         goto end;
     }
     if (p == NULL) {

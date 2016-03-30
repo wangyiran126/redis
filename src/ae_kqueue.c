@@ -34,8 +34,9 @@
 #include <sys/time.h>
 
 typedef struct aeApiState {
-    int kqfd;
-    struct kevent *events;
+    //field descriptor 解释http://stackoverflow.com/questions/5256599/what-are-file-descriptors-explained-in-simple-terms
+    int kqfd;//kqueue field descriptor
+    struct kevent *events;//kevent数量
 } aeApiState;
 
 static int aeApiCreate(aeEventLoop *eventLoop) {
@@ -122,12 +123,12 @@ static int aeApiPoll(aeEventLoop *eventLoop, struct timeval *tvp) {
         numevents = retval;
         for(j = 0; j < numevents; j++) {
             int mask = 0;
-            struct kevent *e = state->events+j;
+            struct kevent *e = state->events+j;//获取每个改变的事件
 
             if (e->filter == EVFILT_READ) mask |= AE_READABLE;
             if (e->filter == EVFILT_WRITE) mask |= AE_WRITABLE;
-            eventLoop->fired[j].fd = e->ident;
-            eventLoop->fired[j].mask = mask;
+            eventLoop->fired[j].fd = e->ident;//赋予事件识别码
+            eventLoop->fired[j].mask = mask;//赋予事件类型
         }
     }
     return numevents;

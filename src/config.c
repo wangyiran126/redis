@@ -282,7 +282,7 @@ void loadServerConfigFromString(char *config) {
                 goto loaderr;
             }
         } else if (!strcasecmp(argv[0],"databases") && argc == 2) {
-            server.dbnum = atoi(argv[1]);
+            server.dbnum = atoi(argv[1]);//分配redis数据库个数
             if (server.dbnum < 1) {
                 err = "Invalid number of databases"; goto loaderr;
             }

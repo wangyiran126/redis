@@ -53,6 +53,8 @@
 struct aeEventLoop;
 
 /* Types and data structures */
+//定义一个方法别名，参数和返回值一样的可以用 void readQueryFromClient(aeEventLoop *el, int fd, void *privdata, int mask)
+//int aeCreateFileEvent(aeEventLoop *eventLoop, int fd, int mask,aeFileProc *proc, void *clientData) 第四个参数可以放readQueryFromClient
 typedef void aeFileProc(struct aeEventLoop *eventLoop, int fd, void *clientData, int mask);
 typedef int aeTimeProc(struct aeEventLoop *eventLoop, long long id, void *clientData);
 typedef void aeEventFinalizerProc(struct aeEventLoop *eventLoop, void *clientData);
@@ -93,6 +95,7 @@ typedef struct aeEventLoop {
     aeFiredEvent *fired; /* Fired events */
     aeTimeEvent *timeEventHead;
     int stop;
+    //kquene信息
     void *apidata; /* This is used for polling API specific data */
     aeBeforeSleepProc *beforesleep;
 } aeEventLoop;

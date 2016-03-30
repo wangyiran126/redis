@@ -45,7 +45,7 @@
 #include <pthread.h>
 #include <syslog.h>
 #include <netinet/in.h>
-#include <lua.h>
+#include "lua.h"
 #include <signal.h>
 
 typedef long long mstime_t; /* millisecond time type. */
@@ -723,7 +723,7 @@ struct redisServer {
     int bindaddr_count;         /* Number of addresses in server.bindaddr[] */
     char *unixsocket;           /* UNIX socket path */
     mode_t unixsocketperm;      /* UNIX socket permission */
-    int ipfd[CONFIG_BINDADDR_MAX]; /* TCP socket file descriptors */
+    int ipfd[CONFIG_BINDADDR_MAX]; /* TCP socket file descriptors */ //socket file descriptors
     int ipfd_count;             /* Used slots in ipfd[] */
     int sofd;                   /* Unix socket file descriptor */
     int cfd[CONFIG_BINDADDR_MAX];/* Cluster bus listening socket */

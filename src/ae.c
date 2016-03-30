@@ -63,10 +63,13 @@
 aeEventLoop *aeCreateEventLoop(int setsize) {
     aeEventLoop *eventLoop;
     int i;
-
+    //为什么zmalloc struct，有分配里面的member http://stackoverflow.com/questions/14768230/malloc-for-struct-and-pointer-in-c
+    //先分配struct(此时分配struct内存及里面指针的内存)
     if ((eventLoop = zmalloc(sizeof(*eventLoop))) == NULL) goto err;
+    //再分配成员指向的内存
     eventLoop->events = zmalloc(sizeof(aeFileEvent)*setsize);
     eventLoop->fired = zmalloc(sizeof(aeFiredEvent)*setsize);
+    //如果没有内存，返回Null,则报错
     if (eventLoop->events == NULL || eventLoop->fired == NULL) goto err;
     eventLoop->setsize = setsize;
     eventLoop->lastTime = time(NULL);
@@ -78,7 +81,7 @@ aeEventLoop *aeCreateEventLoop(int setsize) {
     if (aeApiCreate(eventLoop) == -1) goto err;
     /* Events with mask == AE_NONE are not set. So let's initialize the
      * vector with it. */
-    for (i = 0; i < setsize; i++)
+    for (i = 0; i < setsize; i++)//赋予完aeFileEvent *events内存直接能用角标使用
         eventLoop->events[i].mask = AE_NONE;
     return eventLoop;
 
@@ -131,7 +134,7 @@ void aeDeleteEventLoop(aeEventLoop *eventLoop) {
 void aeStop(aeEventLoop *eventLoop) {
     eventLoop->stop = 1;
 }
-
+//赋予新事件
 int aeCreateFileEvent(aeEventLoop *eventLoop, int fd, int mask,
         aeFileProc *proc, void *clientData)
 {
@@ -139,6 +142,8 @@ int aeCreateFileEvent(aeEventLoop *eventLoop, int fd, int mask,
         errno = ERANGE;
         return AE_ERR;
     }
+    //c操作符优先级 -> [] & http://en.cppreference.com/w/c/language/operator_precedence
+    //先执行eventLoop->events,事件数组的地址，在指向[],具体事件，在执行&,该事件的地址
     aeFileEvent *fe = &eventLoop->events[fd];
 
     if (aeApiAddEvent(eventLoop, fd, mask) == -1)
@@ -256,7 +261,7 @@ static aeTimeEvent *aeSearchNearestTimer(aeEventLoop *eventLoop)
 {
     aeTimeEvent *te = eventLoop->timeEventHead;
     aeTimeEvent *nearest = NULL;
-
+//找到最近的也是最后的next的aeTimeEvent
     while(te) {
         if (!nearest || te->when_sec < nearest->when_sec ||
                 (te->when_sec == nearest->when_sec &&
@@ -396,7 +401,7 @@ int aeProcessEvents(aeEventLoop *eventLoop, int flags)
                 tvp = NULL; /* wait forever */
             }
         }
-
+//调用内核监听到的事件，并赋值到eventloop
         numevents = aeApiPoll(eventLoop, tvp);
         for (j = 0; j < numevents; j++) {
             aeFileEvent *fe = &eventLoop->events[eventLoop->fired[j].fd];

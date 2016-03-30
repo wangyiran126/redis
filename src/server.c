@@ -1758,10 +1758,11 @@ int listenToPort(int port, int *fds, int *count) {
         if (server.bindaddr[j] == NULL) {
             /* Bind * for both IPv6 and IPv4, we enter here only if
              * server.bindaddr_count == 0. */
+            //创建socket,绑定监听
             fds[*count] = anetTcp6Server(server.neterr,port,NULL,
                 server.tcp_backlog);
             if (fds[*count] != ANET_ERR) {
-                anetNonBlock(NULL,fds[*count]);
+                anetNonBlock(NULL,fds[*count]);//设置该socket为nonblock
                 (*count)++;
             }
             fds[*count] = anetTcpServer(server.neterr,port,NULL,
@@ -1856,11 +1857,11 @@ void initServer(void) {
     createSharedObjects();
     adjustOpenFilesLimit();
     server.el = aeCreateEventLoop(server.maxclients+CONFIG_FDSET_INCR);
-    server.db = zmalloc(sizeof(redisDb)*server.dbnum);
+    server.db = zmalloc(sizeof(redisDb)*server.dbnum);//redis分配数据库内存,并返回指针对所分配的地址
 
     /* Open the TCP listening socket for the user commands. */
     if (server.port != 0 &&
-        listenToPort(server.port,server.ipfd,&server.ipfd_count) == C_ERR)
+        listenToPort(server.port,server.ipfd,&server.ipfd_count) == C_ERR)//设置绑定socket等
         exit(1);
 
     /* Open the listening Unix domain socket. */
@@ -3939,7 +3940,7 @@ int main(int argc, char **argv) {
 #endif
     setlocale(LC_COLLATE,"");
     zmalloc_enable_thread_safeness();
-    zmalloc_set_oom_handler(redisOutOfMemoryHandler);
+    zmalloc_set_oom_handler(redisOutOfMemoryHandler);//注册redis超出内存调用方法
     srand(time(NULL)^getpid());
     gettimeofday(&tv,NULL);
     dictSetHashFunctionSeed(tv.tv_sec^tv.tv_usec^getpid());

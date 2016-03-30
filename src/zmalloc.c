@@ -191,7 +191,7 @@ size_t zmalloc_size(void *ptr) {
     return size+PREFIX_SIZE;
 }
 #endif
-
+//void * 代表一般指针类型
 void zfree(void *ptr) {
 #ifndef HAVE_MALLOC_SIZE
     void *realptr;
