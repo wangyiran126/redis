@@ -61,6 +61,7 @@ int listMatchObjects(void *a, void *b) {
     return equalStringObjects(a,b);
 }
 
+//fd为连接的field descriptor
 client *createClient(int fd) {
     client *c = zmalloc(sizeof(client));
 
@@ -70,7 +71,7 @@ client *createClient(int fd) {
      * contexts (for instance a Lua script) we need a non connected client. */
     if (fd != -1) {
         anetNonBlock(NULL,fd);
-        anetEnableTcpNoDelay(NULL,fd);
+        anetEnableTcpNoDelay(NULL,fd);//设置tcp TCP_NODELAY
         if (server.tcpkeepalive)
             anetKeepAlive(NULL,fd,server.tcpkeepalive);
         if (aeCreateFileEvent(server.el,fd,AE_READABLE,//创建客户端查询query事件
@@ -81,7 +82,7 @@ client *createClient(int fd) {
             return NULL;
         }
     }
-
+//赋予数据库给该client
     selectDb(c,0);
     c->id = server.next_client_id++;
     c->fd = fd;
@@ -690,7 +691,7 @@ void acceptTcpHandler(aeEventLoop *el, int fd, void *privdata, int mask) {
     UNUSED(privdata);
 
     while(max--) {
-        cfd = anetTcpAccept(server.neterr, fd, cip, sizeof(cip), &cport);
+        cfd = anetTcpAccept(server.neterr, fd, cip, sizeof(cip), &cport);//在socket上建立连接
         if (cfd == ANET_ERR) {
             if (errno != EWOULDBLOCK)
                 serverLog(LL_WARNING,

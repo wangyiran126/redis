@@ -81,8 +81,8 @@ typedef struct aeTimeEvent {
 
 /* A fired event */
 typedef struct aeFiredEvent {
-    int fd;
-    int mask;
+    int fd;//事件的文件标识符 该标识符和socket等是一个值
+    int mask;//事件类型
 } aeFiredEvent;
 
 /* State of an event based program */
@@ -92,7 +92,7 @@ typedef struct aeEventLoop {
     long long timeEventNextId;//下一个时间时间标识符id
     time_t lastTime;     /* Used to detect system clock skew */
     aeFileEvent *events; /* Registered events */
-    aeFiredEvent *fired; /* Fired events */
+    aeFiredEvent *fired; /* Fired events */ //正在发生的事件
     aeTimeEvent *timeEventHead;
     int stop;
     //事件队列状态

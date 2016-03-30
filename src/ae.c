@@ -142,15 +142,16 @@ int aeCreateFileEvent(aeEventLoop *eventLoop, int fd, int mask,
         errno = ERANGE;
         return AE_ERR;
     }
-    //c操作符优先级 -> [] & http://en.cppreference.com/w/c/language/operator_precedence
-    //先执行eventLoop->events,事件数组的地址，在指向[],具体事件，在执行&,该事件的地址
+    //注意c operator优先级 http://en.cppreference.com/w/c/language/operator_precedence
     aeFileEvent *fe = &eventLoop->events[fd];//用文件标识符当做events索引
-//创建fd对应的事件
+//创建field descriptor相应的事件给队列
     if (aeApiAddEvent(eventLoop, fd, mask) == -1)
         return AE_ERR;
     fe->mask |= mask;
-    if (mask & AE_READABLE) fe->rfileProc = proc;//赋值该事件的handler
+    //赋予事件handler
+    if (mask & AE_READABLE) fe->rfileProc = proc;
     if (mask & AE_WRITABLE) fe->wfileProc = proc;
+    //赋予事件对应的client
     fe->clientData = clientData;
     if (fd > eventLoop->maxfd)
         eventLoop->maxfd = fd;
@@ -404,7 +405,7 @@ int aeProcessEvents(aeEventLoop *eventLoop, int flags)
 //调用内核监听到的事件，并赋值到eventloop
         numevents = aeApiPoll(eventLoop, tvp);
         for (j = 0; j < numevents; j++) {
-            aeFileEvent *fe = &eventLoop->events[eventLoop->fired[j].fd];
+            aeFileEvent *fe = &eventLoop->events[eventLoop->fired[j].fd];//获取这在发生的事件
             int mask = eventLoop->fired[j].mask;
             int fd = eventLoop->fired[j].fd;
             int rfired = 0;
@@ -412,7 +413,7 @@ int aeProcessEvents(aeEventLoop *eventLoop, int flags)
 	    /* note the fe->mask & mask & ... code: maybe an already processed
              * event removed an element that fired and we still didn't
              * processed, so we check if the event is still valid. */
-            if (fe->mask & mask & AE_READABLE) {
+            if (fe->mask & mask & AE_READABLE) {//调用事件的回调函数
                 rfired = 1;
                 fe->rfileProc(eventLoop,fd,fe->clientData,mask);
             }

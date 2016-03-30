@@ -36,7 +36,7 @@
 typedef struct aeApiState {
     //field descriptor 解释http://stackoverflow.com/questions/5256599/what-are-file-descriptors-explained-in-simple-terms
     int kqfd;//事件队列的 field descriptor
-    struct kevent *events;//kevent数量
+    struct kevent *events;//发生的事件
 } aeApiState;
 
 static int aeApiCreate(aeEventLoop *eventLoop) {
@@ -126,7 +126,7 @@ static int aeApiPoll(aeEventLoop *eventLoop, struct timeval *tvp) {
         for(j = 0; j < numevents; j++) {
             int mask = 0;
             struct kevent *e = state->events+j;//获取每个改变的事件
-
+            //事件类型标识符   类似于EV_SET(&ke, fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
             if (e->filter == EVFILT_READ) mask |= AE_READABLE;
             if (e->filter == EVFILT_WRITE) mask |= AE_WRITABLE;
             eventLoop->fired[j].fd = e->ident;//赋予事件识别码

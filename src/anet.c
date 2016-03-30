@@ -57,14 +57,14 @@ static void anetSetError(char *err, const char *fmt, ...)
     vsnprintf(err, ANET_ERR_LEN, fmt, ap);
     va_end(ap);
 }
-
+//设置socket,连接类型
 int anetSetBlock(char *err, int fd, int non_block) {
     int flags;
 
     /* Set the socket blocking (if non_block is zero) or non-blocking.
      * Note that fcntl(2) for F_GETFL and F_SETFL can't be
      * interrupted by a signal. */
-    if ((flags = fcntl(fd, F_GETFL)) == -1) {
+    if ((flags = fcntl(fd, F_GETFL)) == -1) {//获取field descriptor类型
         anetSetError(err, "fcntl(F_GETFL): %s", strerror(errno));
         return ANET_ERR;
     }
@@ -73,9 +73,7 @@ int anetSetBlock(char *err, int fd, int non_block) {
         flags |= O_NONBLOCK;
     else
         flags &= ~O_NONBLOCK;
-   //nonblock意思 O_NONBLOCK   Non-blocking I/O; if no data is available to a read call, or if a write operation
-     //   would block, the read or write call returns -1 with the error EAGAIN.
-    if (fcntl(fd, F_SETFL, flags) == -1) {//设置socket状态为nonblock
+     if (fcntl(fd, F_SETFL, flags) == -1) {//设置field descriptor类型
         anetSetError(err, "fcntl(F_SETFL,O_NONBLOCK): %s", strerror(errno));
         return ANET_ERR;
     }
@@ -141,7 +139,8 @@ int anetKeepAlive(char *err, int fd, int interval)
 
 static int anetSetTcpNoDelay(char *err, int fd, int val)
 {
-    if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &val, sizeof(val)) == -1)
+    //TCP_NODELAY 用于频繁发送小量信息并立即获得结果
+    if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &val, sizeof(val)) == -1)//设置socket参数
     {
         anetSetError(err, "setsockopt TCP_NODELAY: %s", strerror(errno));
         return ANET_ERR;
@@ -529,7 +528,7 @@ int anetUnixServer(char *err, char *path, mode_t perm, int backlog)
 static int anetGenericAccept(char *err, int s, struct sockaddr *sa, socklen_t *len) {
     int fd;
     while(1) {
-        fd = accept(s,sa,len);
+        fd = accept(s,sa,len);//接收一个连接在该socket上的
         if (fd == -1) {
             if (errno == EINTR)
                 continue;
@@ -547,12 +546,13 @@ int anetTcpAccept(char *err, int s, char *ip, size_t ip_len, int *port) {
     int fd;
     struct sockaddr_storage sa;
     socklen_t salen = sizeof(sa);
+    //sa为result parameter(调用函数后会设置连接的地址给这个参数),salen会返回地址的长度，最初传的参数要为地址所占的空间的指针(该参数为value-result parameter)
     if ((fd = anetGenericAccept(err,s,(struct sockaddr*)&sa,&salen)) == -1)
         return ANET_ERR;
 
     if (sa.ss_family == AF_INET) {
         struct sockaddr_in *s = (struct sockaddr_in *)&sa;
-        if (ip) inet_ntop(AF_INET,(void*)&(s->sin_addr),ip,ip_len);
+        if (ip) inet_ntop(AF_INET,(void*)&(s->sin_addr),ip,ip_len);//格式化地址显示,源(void*)&(s->sin_addr)，格式化结果ip
         if (port) *port = ntohs(s->sin_port);
     } else {
         struct sockaddr_in6 *s = (struct sockaddr_in6 *)&sa;

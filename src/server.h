@@ -560,8 +560,8 @@ typedef struct readyList {
  * Clients are taken in a linked list. */
 typedef struct client {
     uint64_t id;            /* Client incremental unique ID. */
-    int fd;                 /* Client socket. */
-    redisDb *db;            /* Pointer to currently SELECTed DB. */
+    int fd;                 /* Client socket. *///客户段对应的连接field descriptor
+    redisDb *db;            /* Pointer to currently SELECTed DB. *///客户端分配给的数据库
     int dictid;             /* ID of the currently SELECTed DB. */
     robj *name;             /* As set by CLIENT SETNAME. */
     sds querybuf;           /* Buffer we use to accumulate client queries. */
