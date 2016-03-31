@@ -61,7 +61,7 @@ int listMatchObjects(void *a, void *b) {
     return equalStringObjects(a,b);
 }
 
-//fd为连接的socket fd
+//---------创建client,连接事件并监听
 client *createClient(int fd) {
     client *c = zmalloc(sizeof(client));
 
@@ -71,12 +71,12 @@ client *createClient(int fd) {
      * contexts (for instance a Lua script) we need a non connected client. */
     
     if (fd != -1) {
-//----------设置socket参数
         anetNonBlock(NULL,fd);
         anetEnableTcpNoDelay(NULL,fd);
         if (server.tcpkeepalive)
             anetKeepAlive(NULL,fd,server.tcpkeepalive);
-        if (aeCreateFileEvent(server.el,fd,AE_READABLE,//创建client查询事件
+//-------------设置client socket连接事件
+        if (aeCreateFileEvent(server.el,fd,AE_READABLE,
             readQueryFromClient, c) == AE_ERR)
         {
             close(fd);
@@ -84,7 +84,7 @@ client *createClient(int fd) {
             return NULL;
         }
     }
-//----------设置client所用数据库
+//----------设置该client所用的数据库
     selectDb(c,0);
     c->id = server.next_client_id++;
     c->fd = fd;
@@ -618,7 +618,8 @@ int clientHasPendingReplies(client *c) {
 #define MAX_ACCEPTS_PER_CALL 1000
 static void acceptCommonHandler(int fd, int flags, char *ip) {
     client *c;
-    if ((c = createClient(fd)) == NULL) {//根据accept file descriptor对应的client
+//-------------创建clietn,连接事件并监听
+    if ((c = createClient(fd)) == NULL) {
         serverLog(LL_WARNING,
             "Error registering fd event for the new client: %s (fd=%d)",
             strerror(errno),fd);
@@ -685,7 +686,7 @@ static void acceptCommonHandler(int fd, int flags, char *ip) {
     server.stat_numconnections++;
     c->flags |= flags;
 }
-//建立socket连接,并创建client fd为socket标识符
+//创建client socket连接,并监听
 void acceptTcpHandler(aeEventLoop *el, int fd, void *privdata, int mask) {
     int cport, cfd, max = MAX_ACCEPTS_PER_CALL;
     char cip[NET_IP_STR_LEN];
@@ -694,7 +695,8 @@ void acceptTcpHandler(aeEventLoop *el, int fd, void *privdata, int mask) {
     UNUSED(privdata);
 
     while(max--) {
-        cfd = anetTcpAccept(server.neterr, fd, cip, sizeof(cip), &cport);//在socket上建立连接
+//-----------socket连接,并返回连接fd
+        cfd = anetTcpAccept(server.neterr, fd, cip, sizeof(cip), &cport);
         if (cfd == ANET_ERR) {
             if (errno != EWOULDBLOCK)
                 serverLog(LL_WARNING,

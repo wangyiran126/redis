@@ -143,8 +143,8 @@ int aeCreateFileEvent(aeEventLoop *eventLoop, int fd, int mask,
         return AE_ERR;
     }
 //注意c operator优先级 http://en.cppreference.com/w/c/language/operator_precedence
-//-----------记住该事件
-    aeFileEvent *fe = &eventLoop->events[fd];//用事件fd作为events索引
+//-----------获取事件并设置，以fd唯一性使得事件唯一
+    aeFileEvent *fe = &eventLoop->events[fd];
 //-----------监听该事件
     if (aeApiAddEvent(eventLoop, fd, mask) == -1)
         return AE_ERR;
@@ -414,7 +414,8 @@ int aeProcessEvents(aeEventLoop *eventLoop, int flags)
 	    /* note the fe->mask & mask & ... code: maybe an already processed
              * event removed an element that fired and we still didn't
              * processed, so we check if the event is still valid. */
-            if (fe->mask & mask & AE_READABLE) {//事件的回调函数调用
+//----------------事件回调
+            if (fe->mask & mask & AE_READABLE) {
                 rfired = 1;
                 fe->rfileProc(eventLoop,fd,fe->clientData,mask);
             }

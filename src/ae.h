@@ -65,7 +65,7 @@ typedef struct aeFileEvent {
     int mask; /* one of AE_(READABLE|WRITABLE) */
     aeFileProc *rfileProc;
     aeFileProc *wfileProc;
-    void *clientData;
+    void *clientData;//每个事件对应的client
 } aeFileEvent;
 
 /* Time event structure */
