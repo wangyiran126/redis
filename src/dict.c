@@ -353,7 +353,7 @@ dictEntry *dictAddRaw(dict *d, void *key)
     dictEntry *entry;
     dictht *ht;
 
-    if (dictIsRehashing(d)) _dictRehashStep(d);
+    if (dictIsRehashing(d)) _dictRehashStep(d);//如果之前有内容，则rehash
 
     /* Get the index of the new element, or -1 if
      * the element already exists. */
