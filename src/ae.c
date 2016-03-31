@@ -134,7 +134,7 @@ void aeDeleteEventLoop(aeEventLoop *eventLoop) {
 void aeStop(aeEventLoop *eventLoop) {
     eventLoop->stop = 1;
 }
-//赋予新事件 fd为field description
+//创建新事件于队列
 int aeCreateFileEvent(aeEventLoop *eventLoop, int fd, int mask,
         aeFileProc *proc, void *clientData)
 {
@@ -142,16 +142,17 @@ int aeCreateFileEvent(aeEventLoop *eventLoop, int fd, int mask,
         errno = ERANGE;
         return AE_ERR;
     }
-    //注意c operator优先级 http://en.cppreference.com/w/c/language/operator_precedence
-    aeFileEvent *fe = &eventLoop->events[fd];//用文件标识符当做events索引
-//创建field descriptor相应的事件给队列
+//注意c operator优先级 http://en.cppreference.com/w/c/language/operator_precedence
+//-----------记住该事件
+    aeFileEvent *fe = &eventLoop->events[fd];//用事件fd作为events索引
+//-----------监听该事件
     if (aeApiAddEvent(eventLoop, fd, mask) == -1)
         return AE_ERR;
     fe->mask |= mask;
-    //赋予事件handler
+//-----------设置事件handler
     if (mask & AE_READABLE) fe->rfileProc = proc;
     if (mask & AE_WRITABLE) fe->wfileProc = proc;
-    //赋予事件对应的client
+//-----------设置事件对应的client
     fe->clientData = clientData;
     if (fd > eventLoop->maxfd)
         eventLoop->maxfd = fd;
@@ -402,7 +403,7 @@ int aeProcessEvents(aeEventLoop *eventLoop, int flags)
                 tvp = NULL; /* wait forever */
             }
         }
-//轮询触发事件，并赋值到eventLoop->fired
+//---------------查找触发事件并保存
         numevents = aeApiPoll(eventLoop, tvp);
         for (j = 0; j < numevents; j++) {
             aeFileEvent *fe = &eventLoop->events[eventLoop->fired[j].fd];//获取这在发生的事件
@@ -413,7 +414,7 @@ int aeProcessEvents(aeEventLoop *eventLoop, int flags)
 	    /* note the fe->mask & mask & ... code: maybe an already processed
              * event removed an element that fired and we still didn't
              * processed, so we check if the event is still valid. */
-            if (fe->mask & mask & AE_READABLE) {//调用事件的回调函数
+            if (fe->mask & mask & AE_READABLE) {//事件的回调函数调用
                 rfired = 1;
                 fe->rfileProc(eventLoop,fd,fe->clientData,mask);
             }

@@ -61,7 +61,7 @@ int listMatchObjects(void *a, void *b) {
     return equalStringObjects(a,b);
 }
 
-//fd为连接的field descriptor
+//fd为连接的socket fd
 client *createClient(int fd) {
     client *c = zmalloc(sizeof(client));
 
@@ -69,12 +69,14 @@ client *createClient(int fd) {
      * This is useful since all the commands needs to be executed
      * in the context of a client. When commands are executed in other
      * contexts (for instance a Lua script) we need a non connected client. */
+    
     if (fd != -1) {
+//----------设置socket参数
         anetNonBlock(NULL,fd);
-        anetEnableTcpNoDelay(NULL,fd);//设置tcp TCP_NODELAY
+        anetEnableTcpNoDelay(NULL,fd);
         if (server.tcpkeepalive)
             anetKeepAlive(NULL,fd,server.tcpkeepalive);
-        if (aeCreateFileEvent(server.el,fd,AE_READABLE,//创建客户端查询query事件
+        if (aeCreateFileEvent(server.el,fd,AE_READABLE,//创建client查询事件
             readQueryFromClient, c) == AE_ERR)
         {
             close(fd);
@@ -82,7 +84,7 @@ client *createClient(int fd) {
             return NULL;
         }
     }
-//赋予数据库给该client
+//----------设置client所用数据库
     selectDb(c,0);
     c->id = server.next_client_id++;
     c->fd = fd;
@@ -125,7 +127,8 @@ client *createClient(int fd) {
     c->peerid = NULL;
     listSetFreeMethod(c->pubsub_patterns,decrRefCountVoid);
     listSetMatchMethod(c->pubsub_patterns,listMatchObjects);
-    if (fd != -1) listAddNodeTail(server.clients,c);//添加client到clients双链表
+//------------添加client到链表
+    if (fd != -1) listAddNodeTail(server.clients,c);
     initClientMultiState(c);
     return c;
 }

@@ -139,8 +139,8 @@ int anetKeepAlive(char *err, int fd, int interval)
 
 static int anetSetTcpNoDelay(char *err, int fd, int val)
 {
-    //TCP_NODELAY 用于频繁发送小量信息并立即获得结果
-    if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &val, sizeof(val)) == -1)//设置socket参数
+    //设置socket参数 TCP_NODELAY作用: 用于频繁发送小量信息并立即获得结果
+    if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &val, sizeof(val)) == -1)
     {
         anetSetError(err, "setsockopt TCP_NODELAY: %s", strerror(errno));
         return ANET_ERR;
@@ -547,6 +547,7 @@ int anetTcpAccept(char *err, int s, char *ip, size_t ip_len, int *port) {
     struct sockaddr_storage sa;
     socklen_t salen = sizeof(sa);
     //sa为result parameter(调用函数后会设置连接的地址给这个参数),salen会返回地址的长度，最初传的参数要为地址所占的空间的指针(该参数为value-result parameter)
+    //建立socket连接
     if ((fd = anetGenericAccept(err,s,(struct sockaddr*)&sa,&salen)) == -1)
         return ANET_ERR;
 

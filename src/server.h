@@ -561,7 +561,7 @@ typedef struct readyList {
 typedef struct client {
     uint64_t id;            /* Client incremental unique ID. */
     int fd;                 /* Client socket. *///客户段socket field descriptor
-    redisDb *db;            /* Pointer to currently SELECTed DB. *///客户端分配给的数据库
+    redisDb *db;            /* Pointer to currently SELECTed DB. *///客户端所用数据库
     int dictid;             /* ID of the currently SELECTed DB. */
     robj *name;             /* As set by CLIENT SETNAME. */
     sds querybuf;           /* Buffer we use to accumulate client queries. */
@@ -723,7 +723,7 @@ struct redisServer {
     int bindaddr_count;         /* Number of addresses in server.bindaddr[] */
     char *unixsocket;           /* UNIX socket path */
     mode_t unixsocketperm;      /* UNIX socket permission */
-    int ipfd[CONFIG_BINDADDR_MAX]; /* TCP socket file descriptors */ //socket file descriptors
+    int ipfd[CONFIG_BINDADDR_MAX]; /* TCP socket file descriptors */ //socket fd
     int ipfd_count;             /* Used slots in ipfd[] */
     int sofd;                   /* Unix socket file descriptor */
     int cfd[CONFIG_BINDADDR_MAX];/* Cluster bus listening socket */
