@@ -79,7 +79,7 @@ typedef struct dict {
     dictType *type;//表类型
     void *privdata;
     dictht ht[2];//hash table
-    long rehashidx; /* rehashing not in progress if rehashidx == -1 *///如果是0,代表创建了ht[1]
+    long rehashidx; /* rehashing not in progress if rehashidx == -1 *///如果初始化创建则为-1,如果之前有值，则为0
     int iterators; /* number of iterators currently running */
 } dict;
 
