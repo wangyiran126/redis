@@ -446,6 +446,7 @@ int dictSdsKeyCompare(void *privdata, const void *key1,
 
 /* A case insensitive version used for the command lookup table and other
  * places where case insensitive non binary-safe comparison is needed. */
+//---------比较键值
 int dictSdsKeyCaseCompare(void *privdata, const void *key1,
         const void *key2)
 {

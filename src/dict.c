@@ -144,6 +144,9 @@ unsigned int dictGenHashFunction(const void *key, int len) {
 }
 
 /* And a case insensitive hash function (based on djb hash) */
+//---------djb hash算法
+//该算法优势  减少hashcode冲突(如果冲突过多则链就越长，compare越多),当key有小的bit的改变hashcode也会完全不同
+//http://stackoverflow.com/questions/10696223/reason-for-5381-number-in-djb-hash-function
 unsigned int dictGenCaseHashFunction(const unsigned char *buf, int len) {
     unsigned int hash = (unsigned int)dict_hash_function_seed;
 
@@ -213,8 +216,8 @@ int dictExpand(dict *d, unsigned long size)
         return DICT_ERR;
 
     /* Rehashing to the same table size is not useful. */
-    if (realsize == d->ht[0].size) return DICT_ERR;//如果要扩建的hash table大小小于现有的大小，则无效
-//---------------创建hash table
+    if (realsize == d->ht[0].size) return DICT_ERR;//如果扩展size小于现有的大小，则无效
+//---------------创建扩展的hash table
     /* Allocate the new hash table and initialize all pointers to NULL */
     n.size = realsize;
     n.sizemask = realsize-1;
@@ -223,15 +226,15 @@ int dictExpand(dict *d, unsigned long size)
 
     /* Is this the first initialization? If so it's not really a rehashing
      * we just set the first hash table so that it can accept keys. */
-//--------------赋值hash table
+//--------------赋值hash table到词典
     if (d->ht[0].table == NULL) {
         d->ht[0] = n;
         return DICT_OK;
     }
-//-------------如果ht[0]已存在，则将新的hash table付给ht[1]
+//-------------如果ht[0]表不为Null，则将新的hash table付给ht[1]
     /* Prepare a second hash table for incremental rehashing */
     d->ht[1] = n;
-    d->rehashidx = 0;
+    d->rehashidx = 0;//设置成0
     return DICT_OK;
 }
 
@@ -246,13 +249,14 @@ int dictExpand(dict *d, unsigned long size)
  * work it does would be unbound and the function may block for a long time. */
 int dictRehash(dict *d, int n) {
     int empty_visits = n*10; /* Max number of empty buckets to visit. */
-    if (!dictIsRehashing(d)) return 0;
-
+    if (!dictIsRehashing(d)) return 0;//如果不是扩容已满,则返回
+//------------清空ht[0].table[d->rehashidx],n为清空次数
     while(n-- && d->ht[0].used != 0) {
         dictEntry *de, *nextde;
 
         /* Note that rehashidx can't overflow as we are sure there are more
          * elements because ht[0].used != 0 */
+//---------------找到要开始调整的**table索引d->rehashidx
         assert(d->ht[0].size > (unsigned long)d->rehashidx);
         while(d->ht[0].table[d->rehashidx] == NULL) {
             d->rehashidx++;
@@ -260,6 +264,7 @@ int dictRehash(dict *d, int n) {
         }
         de = d->ht[0].table[d->rehashidx];
         /* Move all the keys in this bucket from the old to the new hash HT */
+//--------------将ht[0].table[d->rehashidx] element放到ht[1].table[h]里面，h和d->rehashidx不同,ht[1].table[h]的内容放到element->next
         while(de) {
             unsigned int h;
 
@@ -272,10 +277,12 @@ int dictRehash(dict *d, int n) {
             d->ht[1].used++;
             de = nextde;
         }
+//-------------在free前将table指针置null,防止内存释放后该指针指向随机内存，造成数据覆盖,此方法适用全局变量或者成员变量
+//-------------参考http://stackoverflow.com/questions/1025589/setting-variable-to-null-after-free
         d->ht[0].table[d->rehashidx] = NULL;
         d->rehashidx++;
     }
-
+//----------------如果ht[0]使用的element都付给了ht[1],则释放ht[0].table,并将ht[1]赋值给ht[0],
     /* Check if we already rehashed the whole table... */
     if (d->ht[0].used == 0) {
         zfree(d->ht[0].table);
@@ -316,6 +323,7 @@ int dictRehashMilliseconds(dict *d, int ms) {
  * This function is called by common lookup or update operations in the
  * dictionary so that the hash table automatically migrates from H1 to H2
  * while it is actively used. */
+//---------将d->ht[0]赋给d->ht[1]
 static void _dictRehashStep(dict *d) {
     if (d->iterators == 0) dictRehash(d,1);
 }
@@ -353,11 +361,11 @@ dictEntry *dictAddRaw(dict *d, void *key)
     dictEntry *entry;
     dictht *ht;
 
-    if (dictIsRehashing(d)) _dictRehashStep(d);//如果之前有内容，则rehash
+    if (dictIsRehashing(d)) _dictRehashStep(d);//如果dict->ht[1]已满，则将d->ht[0]赋值给dict->ht[1]
 
     /* Get the index of the new element, or -1 if
      * the element already exists. */
-//--------------获取索引(key在hash table的索引),如果size不足则先创建
+//--------------获取索引,如果key值存在则返回-1
     if ((index = _dictKeyIndex(d, key)) == -1)
         return NULL;
 
@@ -365,7 +373,7 @@ dictEntry *dictAddRaw(dict *d, void *key)
      * Insert the element in top, with the assumption that in a database
      * system it is more likely that recently added entries are accessed
      * more frequently. */
-    ht = dictIsRehashing(d) ? &d->ht[1] : &d->ht[0];
+    ht = dictIsRehashing(d) ? &d->ht[1] : &d->ht[0];//根据rehashidx扩建了hashtable[1],如果扩建则用&d->ht[1]
     entry = zmalloc(sizeof(*entry));
 //-------------添加element到ht->table[index]，然后用链表next连上之前的element，从而使最新插入的使用的最频繁
     entry->next = ht->table[index];
@@ -942,7 +950,7 @@ static int _dictExpandIfNeeded(dict *d)
      * table (global setting) or we should avoid it but the ratio between
      * elements/buckets is over the "safe" threshold, we resize doubling
      * the number of buckets. */
-//----------------创建hashtable 给d->ht[1]
+//----------------如果使用的达到容量值，则扩展,并设置d->rehashidx = 0
     if (d->ht[0].used >= d->ht[0].size &&
         (dict_can_resize ||
          d->ht[0].used/d->ht[0].size > dict_force_resize_ratio))
@@ -971,6 +979,7 @@ static unsigned long _dictNextPower(unsigned long size)
  *
  * Note that if we are in the process of rehashing the hash table, the
  * index is always returned in the context of the second (new) hash table. */
+//-------------获取索引值，如果size不足则先创建或者扩展
 static int _dictKeyIndex(dict *d, const void *key)
 {
     unsigned int h, idx, table;
@@ -981,18 +990,20 @@ static int _dictKeyIndex(dict *d, const void *key)
     if (_dictExpandIfNeeded(d) == DICT_ERR)
         return -1;
     /* Compute the key hash value */
-//-------------获取索引
+//-------------获取hashcode，根据dict->type hashFunction函数获取
     h = dictHashKey(d, key);
+//-------------获取索引值
     for (table = 0; table <= 1; table++) {
         idx = h & d->ht[table].sizemask;
         /* Search if this slot does not already contain the given key */
-        he = d->ht[table].table[idx];
+        he = d->ht[table].table[idx];//找到该索引dictEntry
+//------------查找该table的所有next是否有key值相同的,如果有则返回-1
         while(he) {
-            if (dictCompareKeys(d, key, he->key))
+            if (dictCompareKeys(d, key, he->key))//比较键值,如果键值相等，返回-1  用dict->type keyCompare
                 return -1;
             he = he->next;
         }
-        if (!dictIsRehashing(d)) break;
+        if (!dictIsRehashing(d)) break;//如果已经扩容
     }
     return idx;
 }
