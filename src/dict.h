@@ -45,7 +45,7 @@
 #define DICT_NOTUSED(V) ((void) V)
 
 typedef struct dictEntry {
-    void *key;
+    void *key;//键值
     union {
         void *val;
         uint64_t u64;
@@ -66,18 +66,20 @@ typedef struct dictType {
 
 /* This is our hash table structure. Every dictionary has two of this as we
  * implement incremental rehashing, for the old to the new table. */
+//hash table
 typedef struct dictht {
-    dictEntry **table;
-    unsigned long size;
+    dictEntry **table;//指向element指针的指针
+    unsigned long size;//hash表容量,能真实容纳**table的个数
     unsigned long sizemask;
-    unsigned long used;
+    unsigned long used;//该表使用次数
 } dictht;
 
+//词典
 typedef struct dict {
-    dictType *type;
+    dictType *type;//表类型
     void *privdata;
-    dictht ht[2];
-    long rehashidx; /* rehashing not in progress if rehashidx == -1 */
+    dictht ht[2];//hash table
+    long rehashidx; /* rehashing not in progress if rehashidx == -1 *///如果是0,代表创建了ht[1]
     int iterators; /* number of iterators currently running */
 } dict;
 
@@ -123,7 +125,7 @@ typedef void (dictScanFunction)(void *privdata, const dictEntry *de);
 #define dictFreeKey(d, entry) \
     if ((d)->type->keyDestructor) \
         (d)->type->keyDestructor((d)->privdata, (entry)->key)
-
+//如果该词典类型keyDup不是Null
 #define dictSetKey(d, entry, _key_) do { \
     if ((d)->type->keyDup) \
         entry->key = (d)->type->keyDup((d)->privdata, _key_); \

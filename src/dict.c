@@ -165,6 +165,7 @@ static void _dictReset(dictht *ht)
 }
 
 /* Create a new hash table */
+//-----------------创建表
 dict *dictCreate(dictType *type,
         void *privDataPtr)
 {
@@ -213,20 +214,21 @@ int dictExpand(dict *d, unsigned long size)
 
     /* Rehashing to the same table size is not useful. */
     if (realsize == d->ht[0].size) return DICT_ERR;
-
+//---------------创建hash table
     /* Allocate the new hash table and initialize all pointers to NULL */
     n.size = realsize;
     n.sizemask = realsize-1;
-    n.table = zcalloc(realsize*sizeof(dictEntry*));
+    n.table = zcalloc(realsize*sizeof(dictEntry*));//分配dictEntry指针内存空间
     n.used = 0;
 
     /* Is this the first initialization? If so it's not really a rehashing
      * we just set the first hash table so that it can accept keys. */
+//--------------赋值hash table
     if (d->ht[0].table == NULL) {
         d->ht[0] = n;
         return DICT_OK;
     }
-
+//-------------如果ht[0]已存在，则将新的hash table付给ht[1]
     /* Prepare a second hash table for incremental rehashing */
     d->ht[1] = n;
     d->rehashidx = 0;
@@ -321,9 +323,11 @@ static void _dictRehashStep(dict *d) {
 /* Add an element to the target hash table */
 int dictAdd(dict *d, void *key, void *val)
 {
+//--------------添加element到hash table
     dictEntry *entry = dictAddRaw(d,key);
 
     if (!entry) return DICT_ERR;
+//-------------添加val
     dictSetVal(d, entry, val);
     return DICT_OK;
 }
@@ -353,6 +357,7 @@ dictEntry *dictAddRaw(dict *d, void *key)
 
     /* Get the index of the new element, or -1 if
      * the element already exists. */
+//--------------获取索引(key在hash table的索引)
     if ((index = _dictKeyIndex(d, key)) == -1)
         return NULL;
 
@@ -362,10 +367,11 @@ dictEntry *dictAddRaw(dict *d, void *key)
      * more frequently. */
     ht = dictIsRehashing(d) ? &d->ht[1] : &d->ht[0];
     entry = zmalloc(sizeof(*entry));
+//-------------添加element到ht->table[index]，之前插入到放到新插入的next，假设最新插入的使用的最频繁
     entry->next = ht->table[index];
     ht->table[index] = entry;
     ht->used++;
-
+//------------插入键值
     /* Set the hash entry fields. */
     dictSetKey(d, entry, key);
     return entry;
@@ -929,12 +935,14 @@ static int _dictExpandIfNeeded(dict *d)
     if (dictIsRehashing(d)) return DICT_OK;
 
     /* If the hash table is empty expand it to the initial size. */
+//----------------创建hashtable 给d->ht[0]
     if (d->ht[0].size == 0) return dictExpand(d, DICT_HT_INITIAL_SIZE);
 
     /* If we reached the 1:1 ratio, and we are allowed to resize the hash
      * table (global setting) or we should avoid it but the ratio between
      * elements/buckets is over the "safe" threshold, we resize doubling
      * the number of buckets. */
+//----------------创建hashtable 给d->ht[1]
     if (d->ht[0].used >= d->ht[0].size &&
         (dict_can_resize ||
          d->ht[0].used/d->ht[0].size > dict_force_resize_ratio))
@@ -969,6 +977,7 @@ static int _dictKeyIndex(dict *d, const void *key)
     dictEntry *he;
 
     /* Expand the hash table if needed */
+//--------------创建d->ht[0]或者d->ht[1]
     if (_dictExpandIfNeeded(d) == DICT_ERR)
         return -1;
     /* Compute the key hash value */
