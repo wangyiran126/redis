@@ -60,7 +60,7 @@ static int rdbWriteRaw(rio *rdb, void *p, size_t len) {
         return -1;
     return len;
 }
-
+//--------------存储类型到disk
 int rdbSaveType(rio *rdb, unsigned char type) {
     return rdbWriteRaw(rdb,&type,1);
 }
@@ -782,6 +782,7 @@ int rdbSaveRio(rio *rdb, int *error) {
 
             initStaticStringObject(key,keystr);
             expire = getExpire(db,&key);
+//------------------存储键值对
             if (rdbSaveKeyValuePair(rdb,&key,o,expire,now) == -1) goto werr;
         }
         dictReleaseIterator(di);
@@ -850,7 +851,7 @@ int rdbSave(char *filename) {
             strerror(errno));
         return C_ERR;
     }
-
+//-----------初始化rio,设置文件
     rioInitWithFile(&rdb,fp);
     if (rdbSaveRio(&rdb,&error) == C_ERR) {
         errno = error;
@@ -859,6 +860,7 @@ int rdbSave(char *filename) {
 
     /* Make sure data will not remain on the OS's output buffers */
     if (fflush(fp) == EOF) goto werr;
+    //---------------写到disk
     if (fsync(fileno(fp)) == -1) goto werr;
     if (fclose(fp) == EOF) goto werr;
 
@@ -900,9 +902,13 @@ int rdbSaveBackground(char *filename) {
     server.lastbgsave_try = time(NULL);
 
     start = ustime();
+//-------------fork创建一个新的process,他有自己的地址空间，process之间不会相互影响
+//------------http://stackoverflow.com/questions/985051/what-is-the-purpose-of-fork fork的用处
     if ((childpid = fork()) == 0) {
+       
         int retval;
-
+//----------停止该进程，为了attach to process 可以恢复继续执行
+//        kill(0, SIGSTOP);
         /* Child */
         closeListeningSockets(0);
         redisSetProcTitle("redis-rdb-bgsave");

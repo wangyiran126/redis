@@ -307,12 +307,12 @@ void serverLogRaw(int level, const char *msg) {
     FILE *fp;
     char buf[64];
     int rawmode = (level & LL_RAW);
-    int log_to_stdout = server.logfile[0] == '\0';
+    int log_to_stdout = server.logfile[0] == '\0';//如果没有设置日志
 
     level &= 0xff; /* clear flags */
     if (level < server.verbosity) return;
 
-    fp = log_to_stdout ? stdout : fopen(server.logfile,"a");
+    fp = log_to_stdout ? stdout : fopen(server.logfile,"a");//打开文件用a mode
     if (!fp) return;
 
     if (rawmode) {
@@ -334,9 +334,9 @@ void serverLogRaw(int level, const char *msg) {
             role_char = (server.masterhost ? 'S':'M'); /* Slave or Master. */
         }
         fprintf(fp,"%d:%c %s %c %s\n",
-            (int)getpid(),role_char, buf,c[level],msg);
+            (int)getpid(),role_char, buf,c[level],msg);//写到文件输出流
     }
-    fflush(fp);
+    fflush(fp);//写到文件
 
     if (!log_to_stdout) fclose(fp);
     if (server.syslog_enabled) syslog(syslogLevelMap[level], "%s", msg);
@@ -2516,7 +2516,8 @@ int processCommand(client *c) {
  * unlink_unix_socket is non-zero. */
 void closeListeningSockets(int unlink_unix_socket) {
     int j;
-
+//---------------fork出的child process参考Parent process all 文件描述符
+//----------------close是该对象无效
     for (j = 0; j < server.ipfd_count; j++) close(server.ipfd[j]);
     if (server.sofd != -1) close(server.sofd);
     if (server.cluster_enabled)

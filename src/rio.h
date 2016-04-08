@@ -61,6 +61,8 @@ struct _rio {
     size_t max_processing_chunk;
 
     /* Backend-specific vars. */
+    //-----------union可以用里面的类型之一,buffer or file orfdset
+    //-----------union用处http://stackoverflow.com/questions/346536/difference-between-a-structure-and-a-union-in-c
     union {
         /* In-memory buffer target. */
         struct {
@@ -69,7 +71,7 @@ struct _rio {
         } buffer;
         /* Stdio file pointer target. */
         struct {
-            FILE *fp;
+            FILE *fp;//对应的文件
             off_t buffered; /* Bytes written since last fsync. */
             off_t autosync; /* fsync after 'autosync' bytes written. */
         } file;
@@ -83,7 +85,7 @@ struct _rio {
         } fdset;
     } io;
 };
-
+//---------定义struct类型rio
 typedef struct _rio rio;
 
 /* The following functions are our interface with the stream. They'll call the

@@ -1299,13 +1299,13 @@ void processInputBuffer(client *c) {
             resetClient(c);
         } else {
             /* Only reset the client when the command was executed. */
-            if (processCommand(c) == C_OK)
+            if (processCommand(c) == C_OK)//执行client commend
                 resetClient(c);
         }
     }
     server.current_client = NULL;
 }
-
+//----------client commend handler
 void readQueryFromClient(aeEventLoop *el, int fd, void *privdata, int mask) {
     client *c = (client*) privdata;
     int nread, readlen;

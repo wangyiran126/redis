@@ -115,7 +115,10 @@ static size_t rioFileWrite(rio *r, const void *buf, size_t len) {
     if (r->io.file.autosync &&
         r->io.file.buffered >= r->io.file.autosync)
     {
+  //http://www.ibm.com/developerworks/library/l-kernel-memory-access/
+ //-------------写user-space buffered 到kernel cache
         fflush(r->io.file.fp);
+ //------------将kernel cache写到disk
         aof_fsync(fileno(r->io.file.fp));
         r->io.file.buffered = 0;
     }
@@ -137,7 +140,7 @@ static off_t rioFileTell(rio *r) {
 static int rioFileFlush(rio *r) {
     return (fflush(r->io.file.fp) == 0) ? 1 : 0;
 }
-
+//static意味着该变量只能在该.c文件看到,const意味着不可以改变
 static const rio rioFileIO = {
     rioFileRead,
     rioFileWrite,

@@ -94,7 +94,7 @@
  * 111ooooo LLLLLLLL oooooooo ; backref L+8 octets, o+1=1..4096 offset
  *
  */
-
+//--------------数据压缩in_data为压缩数据
 unsigned int
 lzf_compress (const void *const in_data, unsigned int in_len,
 	      void *out_data, unsigned int out_len
