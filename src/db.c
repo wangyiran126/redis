@@ -246,7 +246,7 @@ long long emptyDb(void(callback)(void*)) {
     if (server.cluster_enabled) slotToKeyFlush();
     return removed;
 }
-
+//--------选择数据库select number
 int selectDb(client *c, int id) {
     if (id < 0 || id >= server.dbnum)
         return C_ERR;
