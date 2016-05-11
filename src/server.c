@@ -55,6 +55,9 @@
 #include <locale.h>
 #include <sys/socket.h>
 
+#define FORWARD 1
+#define REVERSE 0
+
 /* Our shared "common" objects */
 
 struct sharedObjectsStruct shared;
@@ -3910,8 +3913,199 @@ int redisIsSupervised(int mode) {
     return 0;
 }
 
+void signalhandler(){
+	printf("trigger SIGINT");
+	exit(0);
+}
 
+void testsignal(){
+	sigset_t sigset;
+	sigemptyset(&sigset);
+	sigaddset(&sigset,SIGKILL);
+	pthread_sigmask(SIG_BLOCK,&sigset,NULL);
+	signal(SIGINT,signalhandler);
+	for (;;) {
+		sleep(10);
+	}
+}
+
+typedef struct node{
+//	void * value;
+	void * value;
+	struct node * pre;
+	struct node * next;
+} node;
+
+typedef struct nodelist{
+	struct node *head;
+	struct node *tail;
+} nodelist;
+
+typedef struct iterator{
+	node * next;
+	int direction;
+} iterator;
+
+void appendtotail(node * node,nodelist * list){
+	if (list->head == NULL) {
+		list->head = node;
+		list->tail = node;
+	}else {
+		node->pre = list->tail;
+		list->tail->next = node;
+		list->tail = node;
+	}
+}
+
+void insert(void * value,node * old_node,nodelist * list,int direction){
+	node * node;
+	if((node = malloc(sizeof(*node))) == NULL){
+		printf("no memory allocate");
+		return;
+	}
+	node->value = value;
+	if (direction == FORWARD) {
+			node->next = old_node->next;
+			node->pre = old_node;
+			if (old_node->next !=NULL) {
+				old_node->next->pre = node;
+			}
+			old_node->next = node;
+			if (list->tail == old_node) {
+				list->tail = node;
+			}
+	}else if (direction == REVERSE) {
+		node->next = old_node;
+		node->pre = old_node->pre;
+		if (old_node->pre != NULL) {
+			old_node->pre->next = node;
+		}
+		old_node->pre = node;
+		if (list->head == old_node) {
+			list->head = node;
+		}
+
+	}
+
+//	free(node);
+}
+
+
+node * gettail(nodelist * nodelist){
+	return nodelist->tail;
+}
+
+node * next(iterator *iterator){
+	node * current;
+	current = iterator->next;
+	if (current != NULL) {
+
+	if (iterator->direction == FORWARD) {
+		iterator->next = current->next;
+//		if ((current = iterator->next->next)!=NULL) {
+//				iterator->next = current;
+//			}
+	}else if(iterator->direction == REVERSE){
+//		if ((current = iterator->next->pre)!=NULL) {
+//				iterator->next = current;
+//		}
+		iterator->next = current->pre;
+	}
+	}
+	return current;
+
+}
+void setiterator(iterator * iterator,nodelist * nodelist,int directorn){
+	if (directorn == FORWARD) {
+			iterator->next = nodelist->head;
+	}else if (directorn == REVERSE) {
+			iterator->next = nodelist->tail;
+	}
+		iterator->direction = directorn;
+}
+
+iterator * createiterator(nodelist *nodelist,int direction){
+		iterator * iterator = malloc(sizeof(* iterator));
+		if (iterator == NULL) {
+			printf("no enough memory");
+			return NULL;
+		}
+
+		setiterator(iterator,nodelist,direction);
+		return iterator;
+}
+node * searchkey(void * key,nodelist * nodelist,int directorn){
+	iterator * iterator = createiterator(nodelist,directorn);
+	node * node;
+	while((node = next(iterator))!= NULL){
+		if (node->value == key) {
+			return node;
+		}
+	}
+	return NULL;
+}
+
+void printint(node * node){
+	printf("%d",*(int*)node->value);
+}
+
+void printlist(nodelist * nodelist,int direction){
+	node * node;
+	iterator * iterator = createiterator(nodelist,direction);
+	while((node = next(iterator))!= NULL){
+		printint(node);
+	}
+	free(iterator);
+}
+
+void testDoubleList(){
+	nodelist *nodelist = malloc(sizeof(*nodelist));
+	node * node = malloc(sizeof(*node));
+	int value = 3;
+	node->value = &value;
+	appendtotail(node,nodelist);
+	printint(gettail(nodelist));
+
+}
+
+void testdoublelistinsert(){
+		nodelist *nodelist = malloc(sizeof(*nodelist));
+		node * node1 = malloc(sizeof(*node1));
+		int value1 = 1;
+		node1->value = &value1;
+		appendtotail(node1,nodelist);
+		node * node2 = malloc(sizeof(*node2));
+		int value2 = 2;
+		node2->value = &value2;
+		appendtotail(node2,nodelist);
+		int value3 =3;
+		insert(&value3,node1,nodelist,FORWARD);
+		node * node3= searchkey(&value3,nodelist,FORWARD);
+		int value4 =4;
+		insert(&value4,node3,nodelist,REVERSE);
+		printlist(nodelist,FORWARD);
+		free(node1);
+		free(node2);
+
+}
+
+typedef struct testbitfield{
+	unsigned int one:3;//代表最大值可以到7(111)
+} testbitfield;
+
+void testbit(){
+	testbitfield field;
+	field.one = 5;
+	printf("%d",field.one);//输出5
+	field.one = 8;
+	printf("%d",field.one);//溢出 输出0
+
+}
 int main(int argc, char **argv) {
+//	testsignal();//终端测试
+//	testDoubleList();//测试双链表
+//	testdoublelistinsert();//测试链表插入
+//	testbit();//测试bitfield
     struct timeval tv;
     int j;
 
