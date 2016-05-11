@@ -4101,11 +4101,39 @@ void testbit(){
 	printf("%d",field.one);//溢出 输出0
 
 }
+
+typedef struct entry{
+	void * key;
+	void * value;
+	struct entry * next;
+} entry;
+
+typedef struct table{
+	entry **table;
+} table;
+
+void hashfunction(void *key){
+//TODO 
+}
+void insert(table *table,void *key,void *value){
+	entry * entry = malloc(*entry);
+	entry->key = key;
+	entry->value;
+	int hash = hashfunction(key);
+}
+void testhashtable(){
+	table *table = malloc(*table);
+	char * key = "key1";
+	char * value = "hello";
+	insert(table,key,value);
+}
+
 int main(int argc, char **argv) {
 //	testsignal();//终端测试
 //	testDoubleList();//测试双链表
 //	testdoublelistinsert();//测试链表插入
 //	testbit();//测试bitfield
+	testhashtable();//测试hash表
     struct timeval tv;
     int j;
 
